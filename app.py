@@ -19,6 +19,7 @@ def transform(self, X):
     return X
 
 def eliminar_duplicados(data):
+    data = data.copy()
     data.drop_duplicates(inplace=True, keep='first')
     return data
     
