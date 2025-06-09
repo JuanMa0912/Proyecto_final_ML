@@ -10,13 +10,16 @@ from PIL import Image
 class AddPrefixToColumns(BaseEstimator, TransformerMixin):
     def __init__(self, prefix=""):
         self.prefix = prefix
-def fit(self, X, y=None):
-    return self
 
-def transform(self, X):
-    X = X.copy()
-    X.columns = [f"{self.prefix}{col}" for col in X.columns]
-    return X
+    def fit(self, X, y=None):
+        # Store original column names to avoid prefixing multiple times
+        self.feature_names_in_ = list(X.columns)
+        return self
+
+    def transform(self, X):
+        X = X.copy()
+        X.columns = [f"{self.prefix}{col}" for col in self.feature_names_in_]
+        return X
 
 def eliminar_duplicados(data):
     data.drop_duplicates(inplace=True, keep='first')
