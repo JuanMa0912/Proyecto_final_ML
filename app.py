@@ -93,6 +93,7 @@ def get_user_input():
     'EverBenched',
     'ExperienceInCurrentDomain'
 ]]
+    return features
 
 
 # Obtener input del usuario
