@@ -19,6 +19,10 @@ class AddPrefixToColumns(BaseEstimator, TransformerMixin):
         X.columns = [f"{self.prefix}{col}" for col in X.columns]
         return X
 
+    def eliminar_duplicados(data):
+        data.drop_duplicates(inplace=True, keep='first')
+        return data
+
 # Configuración de la página
 st.set_page_config(
     page_title="Predicción de Rotación de Empleados",
