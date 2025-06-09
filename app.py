@@ -2,9 +2,9 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
-from PIL import Image
-import numpy as np
+import plotly.express as px
 
+# Funciones necesarias para deserializar modelo
 def eliminar_duplicados(data):
     data = data.copy()
     return data.drop_duplicates(keep='first')
@@ -14,10 +14,7 @@ def apply_log_age(df):
     df['Age'] = np.log(df['Age'] + 1)
     return df
 
-
-# --------------------------
 # Configuración de la página
-# --------------------------
 st.set_page_config(
     page_title="Predicción de Rotación de Empleados",
     page_icon="📊",
@@ -25,21 +22,15 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --------------------------
-# Título y descripción
-# --------------------------
 st.title("Sistema de Predicción de Rotación de Empleados")
 st.markdown("""
 Esta aplicación predice la probabilidad de que un empleado deje la empresa basándose en sus características.
 """)
 
-# --------------------------
-# Cargar el modelo (solo modelo, incluye pipeline)
-# --------------------------
 @st.cache_resource
 def load_model():
     try:
-        model = joblib.load('sta_model.joblib')  # archivo contiene el pipeline + modelo
+        model = joblib.load('sta_model.joblib')
         return model
     except Exception as e:
         st.error(f"Error cargando modelo: {str(e)}")
@@ -49,9 +40,6 @@ model = load_model()
 if model is None:
     st.stop()
 
-# --------------------------
-# Función para capturar input del usuario
-# --------------------------
 def get_user_input():
     col1, col2 = st.sidebar.columns(2)
 
@@ -80,16 +68,11 @@ def get_user_input():
 
     return pd.DataFrame([user_data])
 
-# --------------------------
-# Obtener input y mostrar
-# --------------------------
 user_input = get_user_input()
 st.subheader("Datos del Empleado")
 st.write(user_input)
 
-# --------------------------
-# Predicción individual
-# --------------------------
+# ----------- PREDICCIÓN INDIVIDUAL -----------
 if st.sidebar.button('Predecir Rotación'):
     try:
         prediction = model.predict(user_input)
@@ -97,32 +80,34 @@ if st.sidebar.button('Predecir Rotación'):
 
         st.subheader("Resultado de la Predicción")
 
+        prob_no = prediction_proba[0][0] * 100
+        prob_yes = prediction_proba[0][1] * 100
+
         col1, col2 = st.columns(2)
 
         with col1:
-            st.metric("Predicción", 
-                     "Dejará la empresa" if prediction[0] == 1 else "No dejará la empresa",
-                     delta=f"{prediction_proba[0][1]*100:.2f}% de probabilidad" if prediction[0] == 1 else f"{prediction_proba[0][0]*100:.2f}% de probabilidad",
-                     delta_color="inverse")
+            st.metric("Predicción",
+                      "Dejará la empresa" if prediction[0] == 1 else "No dejará la empresa",
+                      delta=f"{prob_yes:.2f}% prob. rotación" if prediction[0] == 1 else f"{prob_no:.2f}% prob. permanencia",
+                      delta_color="inverse")
 
         with col2:
-            proba_df = pd.DataFrame({
-                'Probabilidad': [prediction_proba[0][0], prediction_proba[0][1]],
-                'Clase': ['No Rotación', 'Rotación']
+            chart_df = pd.DataFrame({
+                "Clase": ["No Rotación", "Rotación"],
+                "Probabilidad (%)": [prob_no, prob_yes]
             })
-            st.bar_chart(proba_df.set_index('Clase'))
+            fig = px.bar(chart_df, x="Clase", y="Probabilidad (%)", color="Clase", text="Probabilidad (%)", title="Probabilidades")
+            st.plotly_chart(fig)
 
         st.info("""
         **Interpretación:**
-        - **No dejará la empresa (0):** Probabilidad alta de permanecer
-        - **Dejará la empresa (1):** Probabilidad alta de rotación
+        - **No dejará la empresa (0):** Probabilidad alta de permanecer.
+        - **Dejará la empresa (1):** Probabilidad alta de rotación.
         """)
     except Exception as e:
         st.error(f"Error al procesar la predicción: {str(e)}")
 
-# --------------------------
-# Predicción por lote
-# --------------------------
+# ----------- PREDICCIÓN POR LOTE -----------
 st.markdown("---")
 st.subheader("Opcional: Predicción por lote (CSV)")
 
@@ -139,11 +124,22 @@ if uploaded_file is not None:
 
                 results = batch_data.copy()
                 results['Predicción'] = batch_predictions
-                results['Probabilidad Rotación'] = batch_proba[:, 1]
-                results['Probabilidad Permanencia'] = batch_proba[:, 0]
+                results['Probabilidad Rotación (%)'] = (batch_proba[:, 1] * 100).round(2)
+                results['Probabilidad Permanencia (%)'] = (batch_proba[:, 0] * 100).round(2)
 
                 st.success("Predicciones completadas!")
                 st.dataframe(results)
+
+                # Gráfico de resumen
+                chart_batch = pd.DataFrame({
+                    "Clase": ["No Rotación", "Rotación"],
+                    "Promedio (%)": [
+                        results["Probabilidad Permanencia (%)"].mean(),
+                        results["Probabilidad Rotación (%)"].mean()
+                    ]
+                })
+                fig_batch = px.bar(chart_batch, x="Clase", y="Promedio (%)", color="Clase", text="Promedio (%)", title="Promedio de Probabilidades en el Lote")
+                st.plotly_chart(fig_batch)
 
                 csv = results.to_csv(index=False).encode('utf-8')
                 st.download_button(
