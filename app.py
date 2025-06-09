@@ -58,6 +58,7 @@ def get_user_input():
     col1, col2 = st.sidebar.columns(2)
 
     with col1:
+        education = st.selectbox('Nivel Educativo', ['Bachelors', 'Masters', 'PHD'])
         joining_year = st.slider('Año de Ingreso', 2012, 2018, 2015)
         city = st.selectbox('Ciudad', ['Bangalore', 'New Delhi', 'Pune'])
         payment_tier = st.slider('Nivel de Pago (1-3)', 1, 3, 2)
@@ -65,18 +66,33 @@ def get_user_input():
     with col2:
         age = st.slider('Edad', 20, 60, 30)
         gender = st.selectbox('Género', ['Male', 'Female'])
+        ever_benched = st.selectbox('Alguna vez en banquillo', ['No', 'Yes'])
+        experience = st.slider('Experiencia en dominio actual (años)', 0, 10, 3)
 
-    # Solo las columnas que el modelo espera después de eliminar Education, EverBenched y ExperienceInCurrentDomain
+    # Este es el orden exacto de columnas esperado
+    columnas_modelo = [
+        'Education',
+        'JoiningYear',
+        'City',
+        'PaymentTier',
+        'Age',
+        'Gender',
+        'EverBenched',
+        'ExperienceInCurrentDomain'
+    ]
+
     user_data = {
+        'Education': education,
         'JoiningYear': joining_year,
         'City': city,
         'PaymentTier': payment_tier,
         'Age': age,
-        'Gender': gender
+        'Gender': gender,
+        'EverBenched': ever_benched,
+        'ExperienceInCurrentDomain': experience
     }
 
-    columnas_finales = ['JoiningYear', 'City', 'PaymentTier', 'Age', 'Gender']
-    return pd.DataFrame([user_data], columns=columnas_finales)
+    return pd.DataFrame([user_data], columns=columnas_modelo)
 
 
 # Obtener input del usuario
