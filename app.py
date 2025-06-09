@@ -3,6 +3,12 @@ import pandas as pd
 import numpy as np
 import joblib
 from PIL import Image
+import numpy as np
+
+def eliminar_duplicados(data):
+    data = data.copy()
+    return data.drop_duplicates(keep='first')
+
 
 # --------------------------
 # Configuración de la página
