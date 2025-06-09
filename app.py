@@ -21,6 +21,12 @@ def transform(self, X):
 def eliminar_duplicados(data):
     data.drop_duplicates(inplace=True, keep='first')
     return data
+    
+def apply_log_age(df):
+    df = df.copy()
+    df['Age'] = np.log(df['Age'] + 1)
+    return df
+
 
 # Configuración de la página
 st.set_page_config(
