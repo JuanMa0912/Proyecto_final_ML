@@ -74,7 +74,6 @@ user_input = get_user_input()
 st.subheader("Datos del Empleado")
 st.write(user_input)
 
-# ----------- PREDICCIÓN INDIVIDUAL -----------
 if st.sidebar.button('Predecir Rotación'):
     try:
         prediction = model.predict(user_input)
@@ -119,9 +118,9 @@ if st.sidebar.button('Predecir Rotación'):
     except Exception as e:
         st.error(f"Error al procesar la predicción: {str(e)}")
 
-# ----------- PREDICCIÓN POR LOTE -----------
+
 st.markdown("---")
-st.subheader("Opcional: Predicción por lote (CSV)")
+st.subheader("Predicción por lote (CSV)")
 
 uploaded_file = st.file_uploader("Suba un archivo CSV con datos de empleados", type="csv")
 if uploaded_file is not None:
