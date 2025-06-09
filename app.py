@@ -9,6 +9,11 @@ def eliminar_duplicados(data):
     data = data.copy()
     return data.drop_duplicates(keep='first')
 
+def apply_log_age(df):
+    df = df.copy()
+    df['Age'] = np.log(df['Age'] + 1)
+    return df
+
 
 # --------------------------
 # Configuración de la página
