@@ -7,17 +7,6 @@ import joblib
 from sklearn.base import BaseEstimator, TransformerMixin
 from PIL import Image
 
-class AddPrefixToColumns(BaseEstimator, TransformerMixin):
-    def __init__(self, prefix=""):
-        self.prefix = prefix
-def fit(self, X, y=None):
-    return self
-
-def transform(self, X):
-    X = X.copy()
-    X.columns = [f"{self.prefix}{col}" for col in X.columns]
-    return X
-
 def eliminar_duplicados(data):
     data = data.copy()
     data.drop_duplicates(inplace=True, keep='first')
@@ -27,7 +16,6 @@ def apply_log_age(df):
     df = df.copy()
     df['Age'] = np.log(df['Age'] + 1)
     return df
-
 
 # Configuración de la página
 st.set_page_config(
