@@ -2,16 +2,15 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import pickle
 import joblib
-from sklearn.base import BaseEstimator, TransformerMixin
 from PIL import Image
 
+# Funciones personalizadas usadas en el pipeline
 def eliminar_duplicados(data):
     data = data.copy()
     data.drop_duplicates(inplace=True, keep='first')
     return data
-    
+
 def apply_log_age(df):
     df = df.copy()
     df['Age'] = np.log(df['Age'] + 1)
@@ -31,19 +30,12 @@ st.markdown("""
 Esta aplicación predice la probabilidad de que un empleado deje la empresa basándose en sus características.
 """)
 
-# Cargar los modelos (mejor hacerlo una vez al inicio)
+# Cargar modelos
 @st.cache_resource
 def load_models():
     try:
-        # Cargar todo en un solo archivo
         model_objects = joblib.load('model_full.joblib')
         return model_objects['preprocessor'], model_objects['model']
-        
-        # O cargar por separado (descomenta si prefieres)
-        # preprocessor = joblib.load('preprocessing_pipeline.joblib')
-        # model = joblib.load('sta_model.joblib')
-        # return preprocessor, model
-        
     except Exception as e:
         st.error(f"Error cargando modelos: {str(e)}")
         return None, None
@@ -51,9 +43,9 @@ def load_models():
 preprocessing_pipeline, model = load_models()
 
 if preprocessing_pipeline is None or model is None:
-    st.stop()  # Detener la app si no se cargan los modelos
-    
-# Función para obtener los inputs del usuario
+    st.stop()
+
+# Entrada de usuario
 def get_user_input():
     col1, col2 = st.sidebar.columns(2)
 
@@ -69,7 +61,6 @@ def get_user_input():
         ever_benched = st.selectbox('Alguna vez en banquillo', ['No', 'Yes'])
         experience = st.slider('Experiencia en dominio actual (años)', 0, 10, 3)
 
-    # Este es el orden exacto de columnas esperado
     columnas_modelo = [
         'Education',
         'JoiningYear',
@@ -94,7 +85,6 @@ def get_user_input():
 
     return pd.DataFrame([user_data], columns=columnas_modelo)
 
-
 # Obtener input del usuario
 user_input = get_user_input()
 
@@ -102,53 +92,57 @@ user_input = get_user_input()
 st.subheader("Datos del Empleado")
 st.write(user_input)
 
-# Preprocesamiento y predicción
+# Botón de predicción
 if st.sidebar.button('Predecir Rotación'):
     try:
-        # Preprocesar los datos
+        # Validar columnas
+        expected_cols = [
+            'Education', 'JoiningYear', 'City', 'PaymentTier',
+            'Age', 'Gender', 'EverBenched', 'ExperienceInCurrentDomain'
+        ]
+        missing_cols = set(expected_cols) - set(user_input.columns)
+        if missing_cols:
+            st.error(f"Faltan columnas en el input: {missing_cols}")
+            st.stop()
+
+        # Preprocesamiento y predicción
         processed_data = preprocessing_pipeline.transform(user_input)
-        
-        # Hacer la predicción
         prediction = model.predict(processed_data)
         prediction_proba = model.predict_proba(processed_data)
-        
+
         # Mostrar resultados
         st.subheader("Resultado de la Predicción")
-        
         col1, col2 = st.columns(2)
-        
+
         with col1:
-            st.metric("Predicción", 
-                     "Dejará la empresa" if prediction[0] == 1 else "No dejará la empresa",
-                     delta=f"{prediction_proba[0][1]*100:.2f}% de probabilidad" if prediction[0] == 1 else f"{prediction_proba[0][0]*100:.2f}% de probabilidad",
-                     delta_color="inverse")
-        
+            st.metric("Predicción",
+                      "Dejará la empresa" if prediction[0] == 1 else "No dejará la empresa",
+                      delta=f"{prediction_proba[0][1]*100:.2f}% de probabilidad" if prediction[0] == 1 else f"{prediction_proba[0][0]*100:.2f}% de probabilidad",
+                      delta_color="inverse")
+
         with col2:
-            # Gráfico de probabilidades
             proba_df = pd.DataFrame({
                 'Probabilidad': [prediction_proba[0][0], prediction_proba[0][1]],
                 'Clase': ['No Rotación', 'Rotación']
             })
             st.bar_chart(proba_df.set_index('Clase'))
-        
-        # Explicación adicional
+
         st.info("""
         **Interpretación:**
         - **No dejará la empresa (0):** Probabilidad alta de permanecer
         - **Dejará la empresa (1):** Probabilidad alta de rotación
         """)
-        
     except Exception as e:
         st.error(f"Error al procesar la predicción: {str(e)}")
 
-# Sección de información adicional
+# Información adicional
 st.sidebar.markdown("---")
 st.sidebar.info("""
 **Nota:** 
 Este modelo utiliza un ensamble STA (Stacking) entrenado con Random Forest, XGBoost y SVC para predecir la rotación de empleados.
 """)
 
-# Posible sección para cargar archivos CSV (opcional)
+# Predicción por lote (CSV)
 st.markdown("---")
 st.subheader("Opcional: Predicción por lote (CSV)")
 
@@ -156,27 +150,33 @@ uploaded_file = st.file_uploader("Suba un archivo CSV con datos de empleados", t
 if uploaded_file is not None:
     try:
         batch_data = pd.read_csv(uploaded_file)
+
+        # Validar columnas
+        expected_cols = [
+            'Education', 'JoiningYear', 'City', 'PaymentTier',
+            'Age', 'Gender', 'EverBenched', 'ExperienceInCurrentDomain'
+        ]
+        missing_cols = set(expected_cols) - set(batch_data.columns)
+        if missing_cols:
+            st.error(f"El archivo no contiene estas columnas requeridas: {missing_cols}")
+            st.stop()
+
         st.write("Datos cargados:", batch_data.head())
-        
+
         if st.button('Predecir lote'):
             with st.spinner('Procesando...'):
-                # Preprocesar
                 processed_batch = preprocessing_pipeline.transform(batch_data)
-                
-                # Predecir
                 batch_predictions = model.predict(processed_batch)
                 batch_proba = model.predict_proba(processed_batch)
-                
-                # Añadir resultados al DataFrame
+
                 results = batch_data.copy()
                 results['Predicción'] = batch_predictions
                 results['Probabilidad Rotación'] = batch_proba[:, 1]
                 results['Probabilidad Permanencia'] = batch_proba[:, 0]
-                
+
                 st.success("Predicciones completadas!")
                 st.dataframe(results)
-                
-                # Opción para descargar resultados
+
                 csv = results.to_csv(index=False).encode('utf-8')
                 st.download_button(
                     "Descargar resultados",
@@ -187,3 +187,4 @@ if uploaded_file is not None:
                 )
     except Exception as e:
         st.error(f"Error al procesar el archivo: {str(e)}")
+
