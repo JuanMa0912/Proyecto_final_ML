@@ -57,19 +57,19 @@ if preprocessing_pipeline is None or model is None:
 def get_user_input():
     # Dividir en columnas para mejor organización
     col1, col2 = st.sidebar.columns(2)
-    
+
     with col1:
         education = st.selectbox('Nivel Educativo', ['Bachelors', 'Masters', 'PHD'])
         joining_year = st.slider('Año de Ingreso', 2012, 2018, 2015)
         city = st.selectbox('Ciudad', ['Bangalore', 'New Delhi', 'Pune'])
         payment_tier = st.slider('Nivel de Pago (1-3)', 1, 3, 2)
-        
+
     with col2:
         age = st.slider('Edad', 20, 60, 30)
         gender = st.selectbox('Género', ['Male', 'Female'])
         ever_benched = st.selectbox('Alguna vez en banquillo', ['No', 'Yes'])
         experience = st.slider('Experiencia en dominio actual (años)', 0, 10, 3)
-    
+
     # Crear diccionario con los datos
     user_data = {
         'Education': education,
@@ -82,19 +82,19 @@ def get_user_input():
         'ExperienceInCurrentDomain': experience
     }
 
-    
-    features = pd.DataFrame([user_data])[[
-    'Education',
-    'JoiningYear',
-    'City',
-    'PaymentTier',
-    'Age',
-    'Gender',
-    'EverBenched',
-    'ExperienceInCurrentDomain'
-]]
-    return features
+    # Asegurar que las columnas estén en el orden exacto y completo
+    columnas_ordenadas = [
+        'Education',
+        'JoiningYear',
+        'City',
+        'PaymentTier',
+        'Age',
+        'Gender',
+        'EverBenched',
+        'ExperienceInCurrentDomain'
+    ]
 
+    return pd.DataFrame([user_data], columns=columnas_ordenadas)
 
 # Obtener input del usuario
 user_input = get_user_input()
