@@ -2,9 +2,11 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
+import plotly.graph_objects as go
 import plotly.express as px
 
-# Funciones necesarias para deserializar modelo
+# Funciones necesarias para deserializar el modelo
+
 def eliminar_duplicados(data):
     data = data.copy()
     return data.drop_duplicates(keep='first')
@@ -92,12 +94,22 @@ if st.sidebar.button('Predecir Rotación'):
                       delta_color="inverse")
 
         with col2:
-            chart_df = pd.DataFrame({
-                "Clase": ["No Rotación", "Rotación"],
-                "Probabilidad (%)": [prob_no, prob_yes]
-            })
-            fig = px.bar(chart_df, x="Clase", y="Probabilidad (%)", color="Clase", text="Probabilidad (%)", title="Probabilidades")
-            st.plotly_chart(fig)
+            gauge_fig = go.Figure(go.Indicator(
+                mode="gauge+number+delta",
+                value=prob_yes,
+                delta={'reference': 50, 'increasing': {'color': "red"}, 'decreasing': {'color': "green"}},
+                gauge={
+                    'axis': {'range': [0, 100]},
+                    'steps': [
+                        {'range': [0, 30], 'color': "lightgreen"},
+                        {'range': [30, 70], 'color': "gold"},
+                        {'range': [70, 100], 'color': "tomato"}
+                    ],
+                    'threshold': {'line': {'color': "black", 'width': 4}, 'thickness': 0.75, 'value': prob_yes}
+                },
+                title={'text': "Probabilidad de Rotación (%)"}
+            ))
+            st.plotly_chart(gauge_fig)
 
         st.info("""
         **Interpretación:**
@@ -130,16 +142,12 @@ if uploaded_file is not None:
                 st.success("Predicciones completadas!")
                 st.dataframe(results)
 
-                # Gráfico de resumen
-                chart_batch = pd.DataFrame({
-                    "Clase": ["No Rotación", "Rotación"],
-                    "Promedio (%)": [
-                        results["Probabilidad Permanencia (%)"].mean(),
-                        results["Probabilidad Rotación (%)"].mean()
-                    ]
-                })
-                fig_batch = px.bar(chart_batch, x="Clase", y="Promedio (%)", color="Clase", text="Promedio (%)", title="Promedio de Probabilidades en el Lote")
-                st.plotly_chart(fig_batch)
+                hist_fig = px.histogram(results, x="Probabilidad Rotación (%)", nbins=10,
+                                        title="Distribución de Probabilidades de Rotación",
+                                        labels={"Probabilidad Rotación (%)": "Probabilidad de Rotación (%)"},
+                                        color_discrete_sequence=["indianred"])
+                hist_fig.update_layout(bargap=0.1)
+                st.plotly_chart(hist_fig)
 
                 csv = results.to_csv(index=False).encode('utf-8')
                 st.download_button(
