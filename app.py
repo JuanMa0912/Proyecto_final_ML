@@ -92,10 +92,19 @@ def get_user_input():
         'EverBenched': ever_benched,
         'ExperienceInCurrentDomain': experience
     }
+
     
-    # Convertir a DataFrame
-    features = pd.DataFrame(user_data, index=[0])
-    return features
+    features = pd.DataFrame([user_data])[[
+    'Education',
+    'JoiningYear',
+    'City',
+    'PaymentTier',
+    'Age',
+    'Gender',
+    'EverBenched',
+    'ExperienceInCurrentDomain'
+]]
+
 
 # Obtener input del usuario
 user_input = get_user_input()
