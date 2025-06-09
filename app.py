@@ -34,7 +34,7 @@ Esta aplicaci√≥n predice la probabilidad de que un empleado deje la empresa bas√
 @st.cache_resource
 def load_models():
     try:
-        model_objects = joblib.load('model_full.joblib')
+        model_objects = joblib.load('sta_model.joblib')
         return model_objects['preprocessor'], model_objects['model']
     except Exception as e:
         st.error(f"Error cargando modelos: {str(e)}")
