@@ -8,8 +8,8 @@ from PIL import Image
 # Funciones personalizadas necesarias para el pipeline
 def eliminar_duplicados(data):
     data = data.copy()
-    data.drop_duplicates(inplace=True, keep='first')
-    return data
+    return data.drop_duplicates(keep='first')
+
 
 def apply_log_age(df):
     df = df.copy()
