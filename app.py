@@ -5,7 +5,7 @@ import numpy as np
 import joblib
 from PIL import Image
 
-# Funciones personalizadas usadas en el pipeline
+# Funciones personalizadas necesarias para el pipeline
 def eliminar_duplicados(data):
     data = data.copy()
     data.drop_duplicates(inplace=True, keep='first')
@@ -95,7 +95,6 @@ st.write(user_input)
 # Botón de predicción
 if st.sidebar.button('Predecir Rotación'):
     try:
-        # Validar columnas
         expected_cols = [
             'Education', 'JoiningYear', 'City', 'PaymentTier',
             'Age', 'Gender', 'EverBenched', 'ExperienceInCurrentDomain'
@@ -104,6 +103,26 @@ if st.sidebar.button('Predecir Rotación'):
         if missing_cols:
             st.error(f"Faltan columnas en el input: {missing_cols}")
             st.stop()
+
+        # 🔍 Validación antes del transform
+        st.subheader("Validación de columnas antes del transform")
+        st.write("Columnas actuales del input:")
+        st.write(user_input.columns.tolist())
+
+        st.write("Tipos de datos:")
+        st.write(user_input.dtypes)
+
+        # (opcional) Forzar tipos esperados
+        user_input = user_input.astype({
+            'Education': 'object',
+            'JoiningYear': 'int64',
+            'City': 'object',
+            'PaymentTier': 'int64',
+            'Age': 'float64',
+            'Gender': 'object',
+            'EverBenched': 'object',
+            'ExperienceInCurrentDomain': 'int64'
+        })
 
         # Preprocesamiento y predicción
         processed_data = preprocessing_pipeline.transform(user_input)
@@ -151,7 +170,6 @@ if uploaded_file is not None:
     try:
         batch_data = pd.read_csv(uploaded_file)
 
-        # Validar columnas
         expected_cols = [
             'Education', 'JoiningYear', 'City', 'PaymentTier',
             'Age', 'Gender', 'EverBenched', 'ExperienceInCurrentDomain'
@@ -165,6 +183,17 @@ if uploaded_file is not None:
 
         if st.button('Predecir lote'):
             with st.spinner('Procesando...'):
+                batch_data = batch_data.astype({
+                    'Education': 'object',
+                    'JoiningYear': 'int64',
+                    'City': 'object',
+                    'PaymentTier': 'int64',
+                    'Age': 'float64',
+                    'Gender': 'object',
+                    'EverBenched': 'object',
+                    'ExperienceInCurrentDomain': 'int64'
+                })
+
                 processed_batch = preprocessing_pipeline.transform(batch_data)
                 batch_predictions = model.predict(processed_batch)
                 batch_proba = model.predict_proba(processed_batch)
@@ -187,4 +216,3 @@ if uploaded_file is not None:
                 )
     except Exception as e:
         st.error(f"Error al procesar el archivo: {str(e)}")
-
