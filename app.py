@@ -47,7 +47,7 @@ def get_user_input():
 
     with col1:
         education = st.selectbox('Nivel Educativo', ['Bachelors', 'Masters', 'PHD'])
-        joining_year = st.slider('Año de Ingreso', 2012, 2018, 2015)
+        joining_year = st.slider('Año de Ingreso', 2012, 2024, 2015)
         city = st.selectbox('Ciudad', ['Bangalore', 'New Delhi', 'Pune'])
         payment_tier = st.slider('Nivel de Pago (1-3)', 1, 3, 2)
 
